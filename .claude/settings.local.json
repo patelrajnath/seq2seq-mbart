@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:arxiv.org)",
+      "Bash(mkdir:*)",
+      "Bash(chmod:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(apt-get:*)",
+      "Bash(./install_and_test.sh)",
+      "Bash(timeout:*)"
+    ],
+    "deny": []
+  }
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "source": "Hello",
+    "target": "Salut"
+  },
+  {
+    "source": "Good morning",
+    "target": "Bună dimineața"
+  },
+  {
+    "source": "Thank you",
+    "target": "Mulțumesc"
+  },
+  {
+    "source": "How are you",
+    "target": "Ce mai faci"
+  },
+  {
+    "source": "I love machine learning",
+    "target": "Îmi place învățarea automată"
+  },
+  {
+    "source": "The weather is nice",
+    "target": "Vremea este frumoasă"
+  },
+  {
+    "source": "Goodbye",
+    "target": "La revedere"
+  },
+  {
+    "source": "Please",
+    "target": "Vă rog"
+  },
+  {
+    "source": "Excuse me",
+    "target": "Scuzați-mă"
+  },
+  {
+    "source": "Where is the station",
+    "target": "Unde este stația"
+  }
+]

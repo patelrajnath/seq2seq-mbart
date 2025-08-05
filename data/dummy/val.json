@@ -1,0 +1,14 @@
+[
+  {
+    "source": "Hello world",
+    "target": "Salut lume"
+  },
+  {
+    "source": "Good night",
+    "target": "Noapte bună"
+  },
+  {
+    "source": "Thank you very much",
+    "target": "Vă mulțumesc foarte mult"
+  }
+]
