@@ -32,12 +32,12 @@ class BaseTrainer:
         eval_interval: int = 500,
         save_interval: int = 1000,
     ):
-        self.model = model
+        self.device = device
+        self.model = model.to(device)
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.optimizer = optimizer
         self.scheduler = scheduler
-        self.device = device
         self.output_dir = output_dir
         self.log_interval = log_interval
         self.eval_interval = eval_interval

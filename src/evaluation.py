@@ -245,13 +245,13 @@ def evaluate_model(
     # Load model and tokenizer
     from .model import MultilingualTranslationModel
     model = MultilingualTranslationModel("facebook/mbart-large-50")
+    model = model.to(device)
     tokenizer = model.tokenizer
     
     if model_path and os.path.exists(model_path):
         checkpoint = torch.load(model_path, map_location=device)
         model.model.load_state_dict(checkpoint['model_state_dict'])
-    
-    model.to(device)
+        model.model = model.model.to(device)
     
     # Load test data
     from .data import DataProcessor
