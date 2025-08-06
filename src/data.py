@@ -54,10 +54,18 @@ class TranslationDataset(Dataset):
             return_tensors="pt"
         )
         
+        # Create decoder_input_ids by shifting labels right and adding decoder_start_token_id
+        labels = target["input_ids"].squeeze(0)
+        decoder_input_ids = torch.cat([
+            torch.tensor([self.tokenizer.lang_code_to_id[self.tgt_lang]]),
+            labels[:-1]
+        ])
+        
         return {
             "input_ids": source["input_ids"].squeeze(0),
             "attention_mask": source["attention_mask"].squeeze(0),
-            "labels": target["input_ids"].squeeze(0),
+            "labels": labels,
+            "decoder_input_ids": decoder_input_ids,
             "decoder_attention_mask": target["attention_mask"].squeeze(0)
         }
 
@@ -100,10 +108,21 @@ class DenoisingPretrainDataset(Dataset):
         )
         
         # For denoising, input and target are the same
+        labels = encoded["input_ids"].squeeze(0)
+        
+        # Create decoder_input_ids by shifting labels right and adding decoder_start_token_id
+        # Use the language token as start token for denoising
+        lang_id = self.tokenizer.lang_code_to_id[lang]
+        decoder_input_ids = torch.cat([
+            torch.tensor([lang_id]),
+            labels[:-1]
+        ])
+        
         return {
             "input_ids": encoded["input_ids"].squeeze(0),
             "attention_mask": encoded["attention_mask"].squeeze(0),
-            "labels": encoded["input_ids"].squeeze(0),
+            "labels": labels,
+            "decoder_input_ids": decoder_input_ids,
             "decoder_attention_mask": encoded["attention_mask"].squeeze(0)
         }
 
