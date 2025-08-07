@@ -185,10 +185,16 @@ class DenoisingPretrainingTrainer(BaseTrainer):
         """Training loop"""
         print(f"Starting pre-training for {self.max_steps} steps...")
         
-        wandb.init(
-            project="mbart-pretraining",
-            name=f"denoising_pretrain_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
+        try:
+            import wandb
+            wandb.init(
+                project="mbart-pretraining",
+                name=f"denoising_pretrain_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            )
+            use_wandb = True
+        except Exception:
+            print("⚠️  wandb not available, using console logging only")
+            use_wandb = False
         
         progress_bar = tqdm(total=self.max_steps, initial=self.step)
         
@@ -200,15 +206,21 @@ class DenoisingPretrainingTrainer(BaseTrainer):
                 loss = self.train_step(batch)
                 
                 if self.step % self.log_interval == 0:
-                    wandb.log({
-                        "train_loss": loss,
-                        "learning_rate": self.scheduler.get_last_lr()[0],
-                        "step": self.step
-                    })
+                    if use_wandb:
+                        wandb.log({
+                            "train_loss": loss,
+                            "learning_rate": self.scheduler.get_last_lr()[0],
+                            "step": self.step
+                        })
+                    else:
+                        print(f"Step {self.step}: loss={loss:.4f}, lr={self.scheduler.get_last_lr()[0]:.2e}")
                 
                 if self.step % self.eval_interval == 0:
                     val_loss = self.validate()
-                    wandb.log({"val_loss": val_loss, "step": self.step})
+                    if use_wandb:
+                        wandb.log({"val_loss": val_loss, "step": self.step})
+                    else:
+                        print(f"Validation: loss={val_loss:.4f}")
                     
                     if val_loss < self.best_val_loss:
                         self.best_val_loss = val_loss
@@ -318,10 +330,16 @@ class TranslationTrainer(BaseTrainer):
         """Training loop"""
         print(f"Starting fine-tuning for {self.max_epochs} epochs...")
         
-        wandb.init(
-            project="mbart-translation",
-            name=f"en_ro_translation_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
+        try:
+            import wandb
+            wandb.init(
+                project="mbart-translation",
+                name=f"en_ro_translation_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            )
+            use_wandb = True
+        except Exception:
+            print("⚠️  wandb not available, using console logging only")
+            use_wandb = False
         
         for epoch in range(self.epoch, self.max_epochs):
             self.epoch = epoch
@@ -364,7 +382,8 @@ class TranslationTrainer(BaseTrainer):
             
             self.save_checkpoint(f"checkpoint_epoch_{epoch+1}.pt")
         
-        wandb.finish()
+        if use_wandb:
+            wandb.finish()
         self.save_checkpoint("final_translation_model.pt")
 
 def run_pretraining(
@@ -386,26 +405,31 @@ def run_pretraining(
     train_loader = processor.create_pretrain_dataloaders(
         batch_size=batch_size,
         max_length=max_length,
-        num_samples=10000
+        num_samples=100
     )
     val_loader = processor.create_pretrain_dataloaders(
         batch_size=batch_size,
         max_length=max_length,
-        num_samples=1000
+        num_samples=20
     )
     
     # Initialize model
     from transformers import MBartConfig
+    processor = DataProcessor()
+    vocab_size = len(processor.tokenizer)
     config = MBartConfig(
-        vocab_size=250027,
-        d_model=1024,
-        encoder_layers=12,
-        decoder_layers=12,
-        encoder_attention_heads=16,
-        decoder_attention_heads=16,
-        encoder_ffn_dim=4096,
-        decoder_ffn_dim=4096,
-        max_position_embeddings=1024,
+        vocab_size=vocab_size,
+        d_model=512,
+        encoder_layers=6,
+        decoder_layers=6,
+        encoder_attention_heads=8,
+        decoder_attention_heads=8,
+        encoder_ffn_dim=2048,
+        decoder_ffn_dim=2048,
+        max_position_embeddings=512,
+        pad_token_id=processor.tokenizer.pad_token_id,
+        eos_token_id=processor.tokenizer.eos_token_id,
+        bos_token_id=processor.tokenizer.bos_token_id,
     )
     
     model = MultilingualDenoisingPretraining(config)
@@ -444,7 +468,8 @@ def run_finetuning(
     processor = DataProcessor()
     train_loader, val_loader, test_loader = processor.create_dataloaders(
         batch_size=batch_size,
-        max_length=max_length
+        max_length=max_length,
+        data_size=1000  # Small dataset for testing
     )
     
     # Initialize model

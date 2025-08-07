@@ -9,6 +9,9 @@ import os
 import torch
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from src.trainer import run_pretraining, run_finetuning
 from src.model import MultilingualTranslationModel
 from src.data import DataProcessor

@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformers import MBartConfig, MBartForConditionalGeneration, MBart50TokenizerFast
+from transformers import MBartConfig, MBartForConditionalGeneration, MBart50TokenizerFast, MBartTokenizer
 from typing import Dict, List, Optional, Tuple
 
 class MultilingualDenoisingPretraining(nn.Module):
@@ -48,7 +48,11 @@ class MultilingualTranslationModel(nn.Module):
     def __init__(self, pretrained_model_name: str = "facebook/mbart-large-50-many-to-many-mmt"):
         super().__init__()
         self.model = MBartForConditionalGeneration.from_pretrained(pretrained_model_name)
-        self.tokenizer = MBart50TokenizerFast.from_pretrained(pretrained_model_name)
+        try:
+            self.tokenizer = MBart50TokenizerFast.from_pretrained(pretrained_model_name)
+        except Exception as e:
+            print(f"Warning: MBart50TokenizerFast failed, trying MBartTokenizer: {e}")
+            self.tokenizer = MBartTokenizer.from_pretrained(pretrained_model_name)
         
     def forward(
         self,
