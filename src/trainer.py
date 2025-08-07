@@ -11,8 +11,8 @@ import os
 import json
 from datetime import datetime
 
-from .model import MultilingualDenoisingPretraining, MultilingualTranslationModel, NoiseGenerator
-from .data import DataProcessor
+from model import MultilingualDenoisingPretraining, MultilingualTranslationModel, NoiseGenerator
+from data import DataProcessor
 
 class BaseTrainer:
     """
