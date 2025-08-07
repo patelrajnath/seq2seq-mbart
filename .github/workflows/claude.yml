@@ -25,6 +25,7 @@ jobs:
       id-token: write
       actions: read # Required for Claude to read CI results on PRs
     steps:
+      - run: export ANTHROPIC_BASE_URL=https://api.moonshot.ai/anthropic
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
