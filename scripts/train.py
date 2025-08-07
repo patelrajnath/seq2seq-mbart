@@ -71,25 +71,25 @@ def main():
     # Run training/evaluation
     if args.mode == "pretrain":
         print("Starting denoising pre-training...")
-        run_pretraining(
-            batch_size=config["training"]["batch_size"],
-            max_steps=config["training"]["max_steps"],
-            learning_rate=config["training"]["learning_rate"],
-            warmup_steps=config["training"]["warmup_steps"],
-            max_length=config["data"]["max_length"],
-            output_dir=config["output"]["output_dir"]
-        )
+        
+        # Save updated config to temporary file
+        temp_config_path = os.path.join(config["output"]["output_dir"], "temp_pretrain_config.json")
+        os.makedirs(os.path.dirname(temp_config_path), exist_ok=True)
+        with open(temp_config_path, 'w') as f:
+            json.dump(config, f, indent=2)
+        
+        run_pretraining(config_path=temp_config_path)
         
     elif args.mode == "finetune":
         print("Starting English-Romanian translation fine-tuning...")
-        run_finetuning(
-            batch_size=config["training"]["batch_size"],
-            max_epochs=config["training"]["max_epochs"],
-            learning_rate=config["training"]["learning_rate"],
-            warmup_steps=config["training"]["warmup_steps"],
-            max_length=config["data"]["max_length"],
-            output_dir=config["output"]["output_dir"]
-        )
+        
+        # Save updated config to temporary file
+        temp_config_path = os.path.join(config["output"]["output_dir"], "temp_finetune_config.json")
+        os.makedirs(os.path.dirname(temp_config_path), exist_ok=True)
+        with open(temp_config_path, 'w') as f:
+            json.dump(config, f, indent=2)
+        
+        run_finetuning(config_path=temp_config_path)
         
     elif args.mode == "evaluate":
         print("Evaluating model...")
