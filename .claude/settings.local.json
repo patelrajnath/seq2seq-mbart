@@ -11,7 +11,9 @@
       "Bash(./install_and_test.sh)",
       "Bash(timeout:*)",
       "Bash(CUDA_VISIBLE_DEVICES=\"\" python3 scripts/train.py --mode pretrain --batch_size 2 --max_steps 3)",
-      "Bash(CUDA_VISIBLE_DEVICES=\"\" python3 working_train.py --mode finetune --batch_size 1 --max_epochs 1)"
+      "Bash(CUDA_VISIBLE_DEVICES=\"\" python3 working_train.py --mode finetune --batch_size 1 --max_epochs 1)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
