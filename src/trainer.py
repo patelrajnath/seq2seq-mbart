@@ -84,22 +84,22 @@ class DenoisingPretrainingTrainer(BaseTrainer):
         val_loader,
         device: torch.device,
         output_dir: str,
-        learning_rate: float = 5e-4,
-        warmup_steps: int = 1000,
-        max_steps: int = 10000,
-        weight_decay: float = 0.01,
+        config: Dict,
         noise_generator: Optional[NoiseGenerator] = None,
     ):
         self.noise_generator = noise_generator
         
+        training_config = config.get("training", {})
         optimizer = AdamW(
             model.parameters(),
-            lr=learning_rate,
-            weight_decay=weight_decay,
+            lr=training_config.get("learning_rate", 5e-4),
+            weight_decay=training_config.get("weight_decay", 0.01),
             betas=(0.9, 0.98),
             eps=1e-6
         )
         
+        max_steps = training_config.get("max_steps", 10000)
+        warmup_steps = training_config.get("warmup_steps", 1000)
         scheduler = get_linear_schedule_with_warmup(
             optimizer,
             num_warmup_steps=warmup_steps,
@@ -116,7 +116,7 @@ class DenoisingPretrainingTrainer(BaseTrainer):
             output_dir=output_dir,
         )
         
-        self.max_steps = max_steps
+        self.max_steps = config.get("training", {}).get("max_steps", 10000)
     
     def train_step(self, batch: Dict[str, torch.Tensor]) -> float:
         """Single training step"""
@@ -247,19 +247,19 @@ class TranslationTrainer(BaseTrainer):
         val_loader,
         device: torch.device,
         output_dir: str,
-        learning_rate: float = 3e-5,
-        warmup_steps: int = 500,
-        max_epochs: int = 3,
-        weight_decay: float = 0.01,
+        config: Dict,
     ):
+        training_config = config.get("training", {})
         optimizer = AdamW(
             model.parameters(),
-            lr=learning_rate,
-            weight_decay=weight_decay,
+            lr=training_config.get("learning_rate", 3e-5),
+            weight_decay=training_config.get("weight_decay", 0.01),
             betas=(0.9, 0.999),
             eps=1e-8
         )
         
+        max_epochs = training_config.get("max_epochs", 3)
+        warmup_steps = training_config.get("warmup_steps", 500)
         total_steps = len(train_loader) * max_epochs
         scheduler = get_linear_schedule_with_warmup(
             optimizer,
@@ -277,7 +277,7 @@ class TranslationTrainer(BaseTrainer):
             output_dir=output_dir,
         )
         
-        self.max_epochs = max_epochs
+        self.max_epochs = config.get("training", {}).get("max_epochs", 3)
     
     def train_step(self, batch: Dict[str, torch.Tensor]) -> float:
         """Single training step"""
@@ -386,53 +386,58 @@ class TranslationTrainer(BaseTrainer):
             wandb.finish()
         self.save_checkpoint("final_translation_model.pt")
 
-def run_pretraining(
-    batch_size: int = 8,
-    max_steps: int = 5000,
-    learning_rate: float = 5e-4,
-    warmup_steps: int = 500,
-    max_length: int = 512,
-    output_dir: str = "checkpoints/pretrain"
-):
+def run_pretraining(config_path: str = "configs/pretrain_config.json"):
     """
     Run denoising pre-training
     """
+    # Load config
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+    
+    model_config = config.get("model", {})
+    training_config = config.get("training", {})
+    data_config = config.get("data", {})
+    output_config = config.get("output", {})
     
     # Initialize components
     processor = DataProcessor()
     train_loader = processor.create_pretrain_dataloaders(
-        batch_size=batch_size,
-        max_length=max_length,
-        num_samples=100
+        batch_size=training_config.get("batch_size", 8),
+        max_length=data_config.get("max_length", 512),
+        num_samples=data_config.get("num_samples", 100)
     )
     val_loader = processor.create_pretrain_dataloaders(
-        batch_size=batch_size,
-        max_length=max_length,
-        num_samples=20
+        batch_size=training_config.get("batch_size", 8),
+        max_length=data_config.get("max_length", 512),
+        num_samples=data_config.get("num_samples", 20)
     )
     
     # Initialize model
     from transformers import MBartConfig
     processor = DataProcessor()
     vocab_size = len(processor.tokenizer)
-    config = MBartConfig(
+    mbart_config = MBartConfig(
         vocab_size=vocab_size,
-        d_model=512,
-        encoder_layers=6,
-        decoder_layers=6,
-        encoder_attention_heads=8,
-        decoder_attention_heads=8,
-        encoder_ffn_dim=2048,
-        decoder_ffn_dim=2048,
-        max_position_embeddings=512,
+        d_model=model_config.get("d_model", 1024),
+        encoder_layers=model_config.get("encoder_layers", 12),
+        decoder_layers=model_config.get("decoder_layers", 12),
+        encoder_attention_heads=model_config.get("encoder_attention_heads", 16),
+        decoder_attention_heads=model_config.get("decoder_attention_heads", 16),
+        encoder_ffn_dim=model_config.get("encoder_ffn_dim", 4096),
+        decoder_ffn_dim=model_config.get("decoder_ffn_dim", 4096),
+        max_position_embeddings=model_config.get("max_position_embeddings", 1024),
         pad_token_id=processor.tokenizer.pad_token_id,
         eos_token_id=processor.tokenizer.eos_token_id,
         bos_token_id=processor.tokenizer.bos_token_id,
+        dropout=model_config.get("dropout", 0.1),
+        attention_dropout=model_config.get("attention_dropout", 0.1),
+        activation_dropout=model_config.get("activation_dropout", 0.0),
     )
     
-    model = MultilingualDenoisingPretraining(config)
+    model = MultilingualDenoisingPretraining(mbart_config)
     noise_generator = NoiseGenerator(processor.tokenizer)
     
     # Initialize trainer
@@ -441,39 +446,40 @@ def run_pretraining(
         train_loader=train_loader,
         val_loader=val_loader,
         device=device,
-        output_dir=output_dir,
-        learning_rate=learning_rate,
-        warmup_steps=warmup_steps,
-        max_steps=max_steps,
+        output_dir=output_config.get("output_dir", "checkpoints/pretrain"),
+        config=config,
         noise_generator=noise_generator
     )
     
     trainer.train()
 
-def run_finetuning(
-    batch_size: int = 8,
-    max_epochs: int = 3,
-    learning_rate: float = 3e-5,
-    warmup_steps: int = 500,
-    max_length: int = 128,
-    output_dir: str = "checkpoints/translation"
-):
+def run_finetuning(config_path: str = "configs/translation_config.json"):
     """
     Run English-Romanian translation fine-tuning
     """
+    # Load config
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+    
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+    
+    training_config = config.get("training", {})
+    data_config = config.get("data", {})
+    output_config = config.get("output", {})
+    model_config = config.get("model", {})
     
     # Initialize components
     processor = DataProcessor()
     train_loader, val_loader, test_loader = processor.create_dataloaders(
-        batch_size=batch_size,
-        max_length=max_length,
-        data_size=1000  # Small dataset for testing
+        batch_size=training_config.get("batch_size", 8),
+        max_length=data_config.get("max_length", 128),
+        data_size=data_config.get("train_size", 1000)  # Small dataset for testing
     )
     
     # Initialize model
-    model = MultilingualTranslationModel("facebook/mbart-large-50")
+    pretrained_model = model_config.get("pretrained_model", "facebook/mbart-large-50")
+    model = MultilingualTranslationModel(pretrained_model)
     
     # Initialize trainer
     trainer = TranslationTrainer(
@@ -481,10 +487,8 @@ def run_finetuning(
         train_loader=train_loader,
         val_loader=val_loader,
         device=device,
-        output_dir=output_dir,
-        learning_rate=learning_rate,
-        warmup_steps=warmup_steps,
-        max_epochs=max_epochs
+        output_dir=output_config.get("output_dir", "checkpoints/translation"),
+        config=config
     )
     
     trainer.train()
@@ -494,22 +498,13 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["pretrain", "finetune"], default="finetune")
-    parser.add_argument("--batch_size", type=int, default=8)
-    parser.add_argument("--learning_rate", type=float, default=3e-5)
-    parser.add_argument("--max_steps", type=int, default=5000)
-    parser.add_argument("--max_epochs", type=int, default=3)
+    parser.add_argument("--config", type=str, help="Path to config file")
     
     args = parser.parse_args()
     
     if args.mode == "pretrain":
-        run_pretraining(
-            batch_size=args.batch_size,
-            max_steps=args.max_steps,
-            learning_rate=args.learning_rate
-        )
+        config_path = args.config or "configs/pretrain_config.json"
+        run_pretraining(config_path=config_path)
     else:
-        run_finetuning(
-            batch_size=args.batch_size,
-            max_epochs=args.max_epochs,
-            learning_rate=args.learning_rate
-        )
+        config_path = args.config or "configs/translation_config.json"
+        run_finetuning(config_path=config_path)
