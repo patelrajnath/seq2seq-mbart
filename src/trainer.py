@@ -11,8 +11,20 @@ import os
 import json
 from datetime import datetime
 
-from model import MultilingualDenoisingPretraining, MultilingualTranslationModel, NoiseGenerator
-from data import DataProcessor
+try:
+    from model import MultilingualDenoisingPretraining, MultilingualTranslationModel, NoiseGenerator
+    from data import DataProcessor
+except ImportError:
+    # Handle both relative and absolute imports
+    try:
+        from .model import MultilingualDenoisingPretraining, MultilingualTranslationModel, NoiseGenerator
+        from .data import DataProcessor
+    except ImportError:
+        import sys
+        import os
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+        from src.model import MultilingualDenoisingPretraining, MultilingualTranslationModel, NoiseGenerator
+        from src.data import DataProcessor
 
 class BaseTrainer:
     """
