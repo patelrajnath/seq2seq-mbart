@@ -35,7 +35,7 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           ANTHROPIC_AUTH_TOKEN: ${{ secrets.KIMI_K2_KEY }}
-          #anthropic_base_url: ${{ secrets.ANTHROPIC_BASE_URL }}
+          ANTHROPIC_BASE_URL: https://api.moonshot.ai/anthropic
 
           # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |
