@@ -1,0 +1,34 @@
+{
+  "model": {
+    "pretrained_model": "facebook/mbart-base-50",
+    "src_lang": "en_XX",
+    "tgt_lang": "ro_RO"
+  },
+  "training": {
+    "batch_size": 16,
+    "max_epochs": 5,
+    "learning_rate": 3e-4,
+    "warmup_steps": 500,
+    "weight_decay": 0.01,
+    "max_grad_norm": 1.0,
+    "save_interval": 1,
+    "eval_interval": 200,
+    "log_interval": 25
+  },
+  "data": {
+    "max_length": 128,
+    "train_size": 10000,
+    "val_size": 1000,
+    "test_size": 1000
+  },
+  "generation": {
+    "max_length": 128,
+    "num_beams": 4,
+    "length_penalty": 1.0,
+    "early_stopping": true
+  },
+  "output": {
+    "output_dir": "checkpoints/finetune_base",
+    "log_dir": "logs/finetune_base"
+  }
+}

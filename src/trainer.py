@@ -398,7 +398,7 @@ class TranslationTrainer(BaseTrainer):
             wandb.finish()
         self.save_checkpoint("final_translation_model.pt")
 
-def run_pretraining(config_path: str = "configs/pretrain_config.json"):
+def run_pretraining(config_path: str = "configs/pretrain_base_config.json"):
     """
     Run denoising pre-training
     """
@@ -465,7 +465,7 @@ def run_pretraining(config_path: str = "configs/pretrain_config.json"):
     
     trainer.train()
 
-def run_finetuning(config_path: str = "configs/translation_config.json"):
+def run_finetuning(config_path: str = "configs/finetune_base_config.json"):
     """
     Run English-Romanian translation fine-tuning
     """
@@ -515,8 +515,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if args.mode == "pretrain":
-        config_path = args.config or "configs/pretrain_config.json"
+        config_path = args.config or "configs/pretrain_base_config.json"
         run_pretraining(config_path=config_path)
     else:
-        config_path = args.config or "configs/translation_config.json"
+        config_path = args.config or "configs/finetune_base_config.json"
         run_finetuning(config_path=config_path)

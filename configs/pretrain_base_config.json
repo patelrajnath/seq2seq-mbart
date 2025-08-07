@@ -1,0 +1,39 @@
+{
+  "model": {
+    "vocab_size": 250027,
+    "d_model": 512,
+    "encoder_layers": 6,
+    "decoder_layers": 6,
+    "encoder_attention_heads": 8,
+    "decoder_attention_heads": 8,
+    "encoder_ffn_dim": 2048,
+    "decoder_ffn_dim": 2048,
+    "max_position_embeddings": 512,
+    "dropout": 0.1,
+    "attention_dropout": 0.1,
+    "activation_dropout": 0.0
+  },
+  "training": {
+    "batch_size": 16,
+    "max_steps": 10000,
+    "learning_rate": 5e-4,
+    "warmup_steps": 1000,
+    "weight_decay": 0.01,
+    "max_grad_norm": 1.0,
+    "save_interval": 1000,
+    "eval_interval": 500,
+    "log_interval": 50
+  },
+  "data": {
+    "max_length": 256,
+    "num_samples": 50000,
+    "languages": ["en_XX", "ro_RO", "fr_XX", "de_DE", "es_XX"],
+    "noise_types": ["span_masking", "sentence_permutation"],
+    "mask_prob": 0.35,
+    "poisson_lambda": 3.0
+  },
+  "output": {
+    "output_dir": "checkpoints/pretrain_base",
+    "log_dir": "logs/pretrain_base"
+  }
+}

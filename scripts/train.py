@@ -47,11 +47,11 @@ def main():
     if args.config:
         config = load_config(args.config)
     else:
-        # Use default configs
+        # Use base configs by default
         if args.mode == "pretrain":
-            config = load_config("configs/pretrain_config.json")
+            config = load_config("configs/pretrain_base_config.json")
         else:
-            config = load_config("configs/translation_config.json")
+            config = load_config("configs/finetune_base_config.json")
     
     # Override config with command line arguments
     if args.batch_size:
